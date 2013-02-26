@@ -179,7 +179,7 @@ module Spree
         variant.send("#{field}=", value) if variant.respond_to?("#{field}=")
         applicable_option_type = OptionType.find(:first, :conditions => [
           "lower(presentation) = ? OR lower(name) = ?",
-          field.to_s, field.to_s]
+          field.to_s.gsub('_',' '), field.to_s.gsub('_',' ')]
         )
         if applicable_option_type.is_a?(OptionType)
           product.option_types << applicable_option_type unless product.option_types.include?(applicable_option_type)
@@ -196,10 +196,13 @@ module Spree
 
         #Associate our new variant with any new taxonomies
         log("Associating taxonomies")
-        ProductImport.settings[:taxonomy_fields].each do |field|
-          log("taxonomy_field: #{field} - #{options[:with][field.to_sym]}")
-          associate_product_with_taxon(variant.product, field.to_s, options[:with][field.to_sym])
-        end
+        taxonomy = options[:with][:taxonomy].split(/\s*>\s*/)
+        taxonomy_name = taxonomy.shift
+        associate_product_with_taxon(variant.product, taxonomy_name, taxonomy)
+        # ProductImport.settings[:taxonomy_fields].each do |field|
+        #   log("taxonomy_field: #{field} - #{options[:with][field.to_sym]}")
+        #   associate_product_with_taxon(variant.product, field.to_s, options[:with][field.to_sym])
+        # end
 
         #Finally, attach any images that have been specified
         ProductImport.settings[:image_fields].each do |field|
@@ -278,9 +281,12 @@ module Spree
         end
 
         #Associate our new product with any taxonomies that we need to worry about
-        ProductImport.settings[:taxonomy_fields].each do |field|
-          associate_product_with_taxon(product, field.to_s, params_hash[field.to_sym])
-        end
+        taxonomy = params_hash[:taxonomy].split(/\s*>\s*/)
+        taxonomy_name = taxonomy.shift
+        associate_product_with_taxon(product, taxonomy_name, taxonomy)
+        # ProductImport.settings[:taxonomy_fields].each do |field|
+        #   associate_product_with_taxon(product, field.to_s, params_hash[field.to_sym])
+        # end
 
         #Finally, attach any images that have been specified
         ProductImport.settings[:image_fields].each do |field|

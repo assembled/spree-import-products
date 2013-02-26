@@ -176,6 +176,7 @@ module Spree
 
       #First, set the primitive fields on the object (prices, etc.)
       options[:with].each do |field, value|
+        value = "" if field.to_s == "sku" && value.nil?
         variant.send("#{field}=", value) if variant.respond_to?("#{field}=")
         applicable_option_type = OptionType.find(:first, :conditions => [
           "lower(presentation) = ? OR lower(name) = ?",

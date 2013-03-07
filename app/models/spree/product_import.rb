@@ -197,8 +197,8 @@ module Spree
 
         #Associate our new variant with any new taxonomies
         log("Associating taxonomies")
-        taxonomy = options[:with][:taxonomy].split(/\s*>\s*/)
-        taxonomy_name = taxonomy.shift
+        taxonomy = options[:with][:taxonomy]
+        taxonomy_name = options[:with][:taxonomy].split(/\s*>\s*/).shift
         associate_product_with_taxon(variant.product, taxonomy_name, taxonomy)
         # ProductImport.settings[:taxonomy_fields].each do |field|
         #   log("taxonomy_field: #{field} - #{options[:with][field.to_sym]}")
@@ -282,8 +282,8 @@ module Spree
         end
 
         #Associate our new product with any taxonomies that we need to worry about
-        taxonomy = params_hash[:taxonomy].split(/\s*>\s*/)
-        taxonomy_name = taxonomy.shift
+        taxonomy = params_hash[:taxonomy]
+        taxonomy_name = params_hash[:taxonomy].split(/\s*>\s*/).shift
         associate_product_with_taxon(product, taxonomy_name, taxonomy)
         # ProductImport.settings[:taxonomy_fields].each do |field|
         #   associate_product_with_taxon(product, field.to_s, params_hash[field.to_sym])
@@ -426,13 +426,16 @@ module Spree
       taxon_hierarchy.split(/\s*\&\s*/).each do |hierarchy|
         hierarchy = hierarchy.split(/\s*>\s*/)
         last_taxon = taxonomy.root
-        hierarchy.each do |taxon|
-          last_taxon = last_taxon.children.find_or_create_by_name_and_taxonomy_id(taxon, taxonomy.id)
+        if hierarchy.count > 1
+          hierarchy.each do |taxon|
+            last_taxon = last_taxon.children.find_or_create_by_name_and_taxonomy_id(taxon, taxonomy.id)
+          end
         end
-
+            
         #Spree only needs to know the most detailed taxonomy item
         product.taxons << last_taxon unless product.taxons.include?(last_taxon)
       end
+
     end
     ### END TAXON HELPERS ###
 
@@ -450,5 +453,3 @@ module Spree
     end
   end
 end
-
-

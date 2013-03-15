@@ -243,7 +243,7 @@ module Spree
       params_hash.each do |field, value|
         if product.respond_to?("#{field}=")
           product.send("#{field}=", value)
-        elsif not special_fields.include?(field.to_s) and property = Property.where(:name => field).first
+        elsif not special_fields.include?(field.to_s) and property = Property.where(:name => field.to_s.gsub('_',' ')).first
           properties_hash[property] = value
         end
       end
@@ -271,14 +271,22 @@ module Spree
           log("#{product.name} was removed from the system and will be replaced.\n")
         end
         
-        #Save the object before creating asssociated objects
+        #Save the object before creating associated objects
         product.save and product_ids << product.id
 
         #Associate properties with product
         properties_hash.each do |property, value|
-          product_property = ProductProperty.where(:product_id => product.id, :property_id => property.id).first_or_initialize
-          product_property.value = value
-          product_property.save!
+          # product_property = ProductProperty.where(:product_id => product.id, :property_id => property.id).first_or_initialize
+          # product_property.value = value
+          # product_property.save!
+
+          if value.present?
+            value.split(",").each do |property_value|
+              product_property = ProductProperty.where(:product_id => product.id, :property_id => property.id, :value => property_value.strip).first_or_initialize
+              product_property.save!
+            end
+          end
+          
         end
 
         #Associate our new product with any taxonomies that we need to worry about

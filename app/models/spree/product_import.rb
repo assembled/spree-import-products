@@ -91,7 +91,7 @@ module Spree
         @products_before_import = Spree::Product.all
         @names_of_products_before_import = @products_before_import.map(&:name)
 
-        rows = CSV.read(self.data_file.path)
+        rows = CSV.read(self.data_file.path, :encoding => 'windows-1251:utf-8')
 
         if ProductImport.settings[:first_row_is_headings]
           col = get_column_mappings(rows[0])

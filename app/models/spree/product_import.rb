@@ -427,6 +427,7 @@ module Spree
       return if product.nil? || taxonomy.nil? || taxon_hierarchy.nil?
       #Using find_or_create_by_name is more elegant, but our magical params code automatically downcases
       # the taxonomy name, so unless we are using MySQL, this isn't going to work.
+      
       taxonomy_name = taxonomy
       taxonomy = Taxonomy.find(:first, :conditions => ["lower(name) = ?", taxonomy])
       taxonomy = Taxonomy.create(:name => taxonomy_name.capitalize) if taxonomy.nil? && ProductImport.settings[:create_missing_taxonomies]
@@ -434,7 +435,9 @@ module Spree
       taxon_hierarchy.split(/\s*\&\s*/).each do |hierarchy|
         hierarchy = hierarchy.split(/\s*>\s*/)
         last_taxon = taxonomy.root
+
         if hierarchy.count > 1
+          hierarchy.shift
           hierarchy.each do |taxon|
             last_taxon = last_taxon.children.find_or_create_by_name_and_taxonomy_id(taxon, taxonomy.id)
           end

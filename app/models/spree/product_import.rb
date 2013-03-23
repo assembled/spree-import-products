@@ -71,6 +71,9 @@ module Spree
     # Meta keywords and description are created on the product model
 
     def import_data!(_transaction=true)
+      require_master_price = Spree::Config[:require_master_price]
+      Spree::Config[:require_master_price] = false
+      
       start
       if _transaction
         transaction do
@@ -79,7 +82,9 @@ module Spree
       else
         _import_data
       end
+      Spree::Config[:require_master_price] = require_master_price
     rescue Exception => exp
+      Spree::Config[:require_master_price] = require_master_price
       log("An error occurred during import, please check file and try again. (#{exp.message})\n#{exp.backtrace.join('\n')}", :error)
       failure
       raise ImportError, exp.message
@@ -122,10 +127,17 @@ module Spree
 
           variant_comparator_field = ProductImport.settings[:variant_comparator_field].try :to_sym
           variant_comparator_column = col[variant_comparator_field]
+          
+          variant_comparator_field = :sku if variant_comparator_field == :master_sku || variant_comparator_field == :parent_sku
 
-          if ProductImport.settings[:create_variants] and variant_comparator_column and
-            p = Product.where(variant_comparator_field => row[variant_comparator_column]).first
-
+          if ProductImport.settings[:create_variants] and variant_comparator_column and 
+            (p = variant_comparator_field == :sku ? Variant.where(variant_comparator_field => row[variant_comparator_column]).first.try(:product) : Product.where(variant_comparator_field => row[variant_comparator_column]).first)
+            # if variant_comparator_field == :sku
+            #   p = Variant.where(variant_comparator_field => row[variant_comparator_column]).first.product
+            # else
+            #   p = Product.where(variant_comparator_field => row[variant_comparator_column]).first
+            # end
+            
             log("found product with this field #{variant_comparator_field}=#{row[variant_comparator_column]}")
             p.update_attribute(:deleted_at, nil) if p.deleted_at #Un-delete product if it is there
             p.variants.each { |variant| variant.update_attribute(:deleted_at, nil) }

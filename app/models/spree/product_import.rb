@@ -117,6 +117,7 @@ module Spree
           col.each do |key, value|
             #Trim whitespace off the beginning and end of row fields
             row[value].try :strip!
+            row[value].try(:gsub!, /\n+/, "\n")
             product_information[key] = row[value]
           end
 
@@ -254,7 +255,7 @@ module Spree
       # What this does is only assigns values to products if the product accepts that field.
       params_hash.each do |field, value|
         if product.respond_to?("#{field}=")
-          product.send("#{field}=", value)
+          product.send("#{field}=", value) if value.present?
         elsif not special_fields.include?(field.to_s) and property = Property.where(:name => field.to_s.gsub('_',' ')).first
           properties_hash[property] = value
         end

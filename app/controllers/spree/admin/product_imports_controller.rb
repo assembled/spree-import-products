@@ -13,7 +13,8 @@ module Spree
 
       def create
         @product_import = Spree::ProductImport.create(params[:product_import])
-        Delayed::Job.enqueue ImportProducts::ImportJob.new(@product_import, spree_current_user)
+        ImportsWorker.perform_async(@product_import.id, spree_current_user.id)
+        # Delayed::Job.enqueue ImportProducts::ImportJob.new(@product_import, spree_current_user)
         flash[:notice] = t('product_import_processing')
         redirect_to admin_product_imports_path
       end
